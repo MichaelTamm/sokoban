@@ -24,6 +24,8 @@ var wall_cells: Array[Vector2i] = []
 var target_cells: Array[Vector2i] = []
 var box_cells: Array[Vector2i] = []
 var player_pos: Vector2i
+var has_won: bool = false
+var win_label: Label
 
 
 # --- Hilfsfunktionen für Koordinaten-Umrechnung ---
@@ -73,6 +75,8 @@ func _ready() -> void:
 
 	box_spawner.visible = false
 
+	create_win_label()
+
 	# 4. Startposition des Spielers in unser Koordinatensystem überführen
 	player_pos = world_to_grid(player.position)
 	player.position = grid_to_world(player_pos)
@@ -98,6 +102,10 @@ func reset_level() -> void:
 # --- Spiellogik (vollständig im (row, col) Koordinatensystem) ---
 
 func try_move(dir: Vector2i) -> void:
+	# Nach dem Sieg sind keine Züge mehr erlaubt (Neustart mit R)
+	if has_won:
+		return
+
 	var next_cell: Vector2i = player_pos + dir
 
 	# 1. Wandprüfung
@@ -139,4 +147,24 @@ func check_win() -> void:
 		var b_cell: Vector2i = world_to_grid(b.position)
 		if not b_cell in target_cells:
 			return
+	has_won = true
+	win_label.visible = true
 	print("Gewonnen!")
+
+
+# Erzeugt die Sieg-Anzeige (zunächst unsichtbar) als Overlay über dem Spiel
+func create_win_label() -> void:
+	var layer := CanvasLayer.new()
+	add_child(layer)
+
+	win_label = Label.new()
+	win_label.text = "Gewonnen!\nDrücke R für einen Neustart"
+	win_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	win_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	win_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	win_label.add_theme_font_size_override("font_size", 48)
+	win_label.add_theme_color_override("font_color", Color.WHITE)
+	win_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	win_label.add_theme_constant_override("outline_size", 12)
+	win_label.visible = false
+	layer.add_child(win_label)
